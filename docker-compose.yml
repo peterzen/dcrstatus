@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    volumes:
+      - uptime-kuma:/app/data
+    restart: always
+
+  proxy:
+    image: dperson/nginx
+    ports:
+      - 443:443
+      - 80:80
+    command: '-w "http://uptime-kuma:3001/;/" -r "80;0.0.0.0;https://is.decred.online/"'
+
+    volumes:
+       - "${PWD}/cert.pem:/etc/nginx/ssl/fullchain.pem"
+       - "${PWD}/key.key:/etc/nginx/ssl/privkey.pem"
+    environment:
+      - QUICK=true
+      - STAPLING=
+      - SSL_SESSIONS=3600
+
+# https://stackoverflow.com/questions/47088261/restarting-an-unhealthy-docker-container-based-on-healthcheck
+  tor_proxy:
+    container_name: tor_proxy
+    build: ./tor_proxy/
+    restart: unless-stopped
+    volumes:
+      - tor_data:/var/lib/tor
+    healthcheck:
+      test: curl --socks5-hostname localhost:9050 --silent --fail http://2gzyxa5ihm7nsggfxnu52rck2vv4rvmdlkiu3zzui5du4xyclen53wid.onion/
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "9050:9050"
+      - "9051:9051"
+
+volumes:
+  tor_data:
+  uptime-kuma:
+    external: true
+

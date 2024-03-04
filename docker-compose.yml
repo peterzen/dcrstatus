@@ -13,11 +13,11 @@ services:
     ports:
       - 443:443
       - 80:80
-    command: '-w "http://uptime-kuma:3001/;/" -r "80;0.0.0.0;https://is.decred.online/"'
+    command: "-w \"http://uptime-kuma:3001/;/\" -r \"80;0.0.0.0;${SERVER_URL}\""
 
     volumes:
        - "${PWD}/cert.pem:/etc/nginx/ssl/fullchain.pem"
-       - "${PWD}/key.key:/etc/nginx/ssl/privkey.pem"
+       - "${PWD}/key.pem:/etc/nginx/ssl/privkey.pem"
     environment:
       - QUICK=true
       - STAPLING=

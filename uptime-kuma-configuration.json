@@ -1,7 +1,6 @@
 {
     "version": "1.23.11",
-    "notificationList": [
-    ],
+    "notificationList": [],
     "monitorList": [
         {
             "id": 1,
@@ -1799,9 +1798,7 @@
             "docker_container": "",
             "docker_host": null,
             "proxyId": null,
-            "notificationIDList": {
-                "1": true
-            },
+            "notificationIDList": {},
             "tags": [],
             "maintenance": false,
             "mqttTopic": "",
@@ -1894,9 +1891,7 @@
             "docker_container": "",
             "docker_host": null,
             "proxyId": null,
-            "notificationIDList": {
-                "1": true
-            },
+            "notificationIDList": {},
             "tags": [],
             "maintenance": false,
             "mqttTopic": "",
@@ -1989,7 +1984,6 @@
             "docker_host": null,
             "proxyId": null,
             "notificationIDList": {
-                "1": true
             },
             "tags": [],
             "maintenance": false,

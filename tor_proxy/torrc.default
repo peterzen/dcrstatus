@@ -1,0 +1,12 @@
+SOCKSPort 0.0.0.0:9050 
+RunAsDaemon 0
+SafeLogging 0
+Log err stderr
+DisableDebuggerAttachment 0
+
+
+ControlPort 0.0.0.0:9051
+# 7277dc8bac92a60bad534557c1480754
+HashedControlPassword 16:9C433C1346D05771606EB6881A72DA954072314F567BC0FD6819896031
+CookieAuthentication 0
+CookieAuthFileGroupReadable 1

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="40.220001"
+   height="40.220001"
+   viewBox="0 0 47.577896 47.577896"
+   version="1.1"
+   id="svg68"
+   sodipodi:docname="iconDecredBlue.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   inkscape:export-filename="icon.svg"
+   inkscape:export-xdpi="1527.5981"
+   inkscape:export-ydpi="1527.5981"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview70"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="17.67767"
+     inkscape:cx="39.00401"
+     inkscape:cy="18.950462"
+     inkscape:window-width="2560"
+     inkscape:window-height="1029"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg68" />
+  <defs
+     id="defs62">
+    <style
+       id="style60">.a{fill:#fff;}</style>
+  </defs>
+  <path
+     class="a"
+     d="m 36.731768,32.857646 8.22,8.24 h -8.11 l -13.6,-13.6 h 8.42 a 6.8,6.8 0 0 0 0,-13.599999 h -2.74 l -6.8,-6.7999998 h 9.23 a 13.6,13.6 0 0 1 13.6,13.5999988 c 0,5.52 -2.43,9.84 -8.22,12.16 z"
+     id="path64"
+     style="fill:#ffffff;fill-opacity:1" />
+  <path
+     class="a"
+     d="M 12.981768,15.347646 4.7317668,7.0976472 h 8.1100012 l 13.6,13.5999988 h -8.42 a 6.8,6.8 0 1 0 0,13.6 h 2.71 l 6.8,6.8 h -9.2 a 13.6,13.6 0 0 1 -13.6000012,-13.6 c 0,-5.52 2.4300004,-9.84 8.2500012,-12.15 z"
+     id="path66"
+     style="fill:#ffffff;fill-opacity:1" />
+</svg>

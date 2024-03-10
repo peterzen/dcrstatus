@@ -1,0 +1,8 @@
+
+body, #app > .dark, html .dark header {
+  background-color: #091440 !important;
+}
+
+.shadow-box {
+  background-color: #000535 !important;
+}

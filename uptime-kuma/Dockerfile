@@ -1,3 +1,4 @@
+# This Dockerfile is used to add Decred branding assets and CSS to the uptime kuma image.
 FROM louislam/uptime-kuma:1
 
 RUN rm -f /app/dist/icon.svg*

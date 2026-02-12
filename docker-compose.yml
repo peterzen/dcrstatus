@@ -10,19 +10,36 @@ services:
     restart: always
 
   proxy:
-    image: dperson/nginx
+    image: nginx:alpine
+    container_name: proxy
     ports:
-      - 443:443
-      - 80:80
-    command: "-w \"http://uptime-kuma:3001/;/\" -r \"80;0.0.0.0;${SERVER_URL}\""
-
+      - "80:80"
+      - "443:443"
     volumes:
-       - "${PWD}/cert.pem:/etc/nginx/ssl/fullchain.pem"
-       - "${PWD}/key.pem:/etc/nginx/ssl/privkey.pem"
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - certbot-webroot:/var/www/certbot:ro
+      - certbot-certs:/etc/letsencrypt:ro
     environment:
-      - QUICK=true
-      - STAPLING=
-      - SSL_SESSIONS=3600
+      - SERVER_URL=${SERVER_URL}
+    command: /bin/sh -c '/docker-entrypoint.d/20-envsubst-on-templates.sh; while :; do sleep 12h && nginx -s reload 2>/dev/null; done & nginx -g "daemon off;"'
+    restart: always
+    depends_on:
+      - uptime-kuma
+
+#  proxy:
+#    image: dperson/nginx
+#    ports:
+#      - 443:443
+#      - 80:80
+#    command: "-w \"http://uptime-kuma:3001/;/\" -r \"80;0.0.0.0;${SERVER_URL}\""
+#
+#    volumes:
+#       - "${PWD}/cert.pem:/etc/nginx/ssl/fullchain.pem"
+#       - "${PWD}/key.pem:/etc/nginx/ssl/privkey.pem"
+#    environment:
+#      - QUICK=true
+#      - STAPLING=
+#      - SSL_SESSIONS=3600
 
 # https://stackoverflow.com/questions/47088261/restarting-an-unhealthy-docker-container-based-on-healthcheck
   tor_proxy:
@@ -40,8 +57,20 @@ services:
       - "9050:9050"
       - "9051:9051"
 
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - certbot-webroot:/var/www/certbot
+      - certbot-certs:/etc/letsencrypt
+    # Long-lived container: renews every 12h, certbot only acts if cert is near expiry
+    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done'
+    restart: always
+
 volumes:
   tor_data:
+  certbot-webroot:
+  certbot-certs:
   uptime-kuma:
     external: true
 

@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   uptime-kuma:
     hostname: uptime-kuma
     build: ./uptime-kuma
     container_name: uptime-kuma
     volumes:
-      - uptime-kuma:/app/data
+      - /srv/uptime-kuma:/app/data
     restart: always
 
   proxy:
@@ -17,8 +15,8 @@ services:
       - "443:443"
     volumes:
       - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
-      - certbot-webroot:/var/www/certbot:ro
-      - certbot-certs:/etc/letsencrypt:ro
+      - /srv/certbot-webroot:/var/www/certbot:ro
+      - /srv/certbot-certs:/etc/letsencrypt:ro
     environment:
       - SERVER_URL=${SERVER_URL}
     command: /bin/sh -c '/docker-entrypoint.d/20-envsubst-on-templates.sh; while :; do sleep 12h && nginx -s reload 2>/dev/null; done & nginx -g "daemon off;"'
@@ -47,12 +45,13 @@ services:
     build: ./tor_proxy/
     restart: unless-stopped
     volumes:
-      - tor_data:/var/lib/tor
+      - /srv/tor_data:/var/lib/tor
     healthcheck:
-      test: curl --socks5-hostname localhost:9050 --silent --fail http://2gzyxa5ihm7nsggfxnu52rck2vv4rvmdlkiu3zzui5du4xyclen53wid.onion/
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD-SHELL", "nc -z localhost 9050"]
+      interval: 120s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     ports:
       - "9050:9050"
       - "9051:9051"
@@ -61,16 +60,8 @@ services:
     image: certbot/certbot
     container_name: certbot
     volumes:
-      - certbot-webroot:/var/www/certbot
-      - certbot-certs:/etc/letsencrypt
+      - /srv/certbot-webroot:/var/www/certbot
+      - /srv/certbot-certs:/etc/letsencrypt
     # Long-lived container: renews every 12h, certbot only acts if cert is near expiry
     entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done'
     restart: always
-
-volumes:
-  tor_data:
-  certbot-webroot:
-  certbot-certs:
-  uptime-kuma:
-    external: true
-

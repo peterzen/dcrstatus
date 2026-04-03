@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.21
 RUN apk update && apk add \
     tor \
     --update-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing/ \

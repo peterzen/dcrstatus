@@ -2,6 +2,11 @@
 
 This repository contains configuration to run an instance of [Uptime Kuma](https://github.com/louislam/uptime-kuma) monitoring the health of applications and services of the Decred network.
 
+Uptime Kuma runs at **v2** with a **MariaDB** backend (v1 used SQLite, whose `kuma.db`
+grew without bound — see `CLAUDE.md` for the history). TLS is terminated by **Caddy**,
+which obtains and renews Let's Encrypt certificates automatically (replacing the old
+nginx + certbot setup).
+
 ### Prerequisites
 
  * Docker
@@ -10,28 +15,23 @@ This repository contains configuration to run an instance of [Uptime Kuma](https
 
   1. Clone the repository
 
-  2. Change the `SERVER_URL` variable to the domain name the server will run on
+  2. Copy `.env.example` to `.env` and set `SERVER_URL`, `CERTBOT_EMAIL`, and the
+     `MARIADB_*` credentials. `SERVER_URL` must resolve to this host so Caddy can obtain
+     a Let's Encrypt certificate.
 
-  3. Generate the server key and certificate:
-
-```bash
-openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes
-```
-  4. Build Docker images:
+  3. Build Docker images:
 ```bash
 docker compose build
 ```
 
-  5. Create data volume:
-```bash
-docker volume create uptime-kuma
-```
-
-  6. Bring up the Docker stack:
+  4. Bring up the Docker stack:
 
 ```bash
 docker compose up -d
 ```
 
-  7. Open Uptime Kuma at the configured URL, create admin user and import `uptime-kuma-configuration.json` in the settings menu.  The JSON file contains the services the platform will be monitoring.
-
+  5. Open Uptime Kuma at the configured URL and create the admin user. Monitors and
+     status pages live in the MariaDB database, so a fresh install starts empty — restore
+     a database backup (or migrate an existing instance) to populate it. The legacy
+     `uptime-kuma-configuration.json` JSON import is deprecated in v2 and does **not**
+     restore status pages.

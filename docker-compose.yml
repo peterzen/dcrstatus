@@ -5,41 +5,58 @@ services:
     container_name: uptime-kuma
     volumes:
       - /srv/uptime-kuma:/app/data
+    environment:
+      # Uptime Kuma v2 uses MariaDB instead of SQLite (fixes unbounded kuma.db growth).
+      - UPTIME_KUMA_DB_TYPE=mariadb
+      - UPTIME_KUMA_DB_HOSTNAME=mariadb
+      - UPTIME_KUMA_DB_PORT=3306
+      - UPTIME_KUMA_DB_NAME=${MARIADB_DATABASE}
+      - UPTIME_KUMA_DB_USERNAME=${MARIADB_USER}
+      - UPTIME_KUMA_DB_PASSWORD=${MARIADB_PASSWORD}
+    restart: always
+    labels:
+      # Watched by the autoheal sidecar; uses the image's built-in HEALTHCHECK.
+      - autoheal=true
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  mariadb:
+    image: mariadb:11
+    container_name: mariadb
+    command: ["--max-allowed-packet=256M"]
+    environment:
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+    volumes:
+      - /srv/mariadb:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     restart: always
 
-  proxy:
-    image: nginx:alpine
-    container_name: proxy
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
     ports:
       - "80:80"
       - "443:443"
-    volumes:
-      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
-      - /srv/certbot-webroot:/var/www/certbot:ro
-      - /srv/certbot-certs:/etc/letsencrypt:ro
     environment:
       - SERVER_URL=${SERVER_URL}
-    command: /bin/sh -c '/docker-entrypoint.d/20-envsubst-on-templates.sh; while :; do sleep 12h && nginx -s reload 2>/dev/null; done & nginx -g "daemon off;"'
+      - CERTBOT_EMAIL=${CERTBOT_EMAIL}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /srv/caddy-data:/data
+      - /srv/caddy-config:/config
     restart: always
     depends_on:
       - uptime-kuma
 
-#  proxy:
-#    image: dperson/nginx
-#    ports:
-#      - 443:443
-#      - 80:80
-#    command: "-w \"http://uptime-kuma:3001/;/\" -r \"80;0.0.0.0;${SERVER_URL}\""
-#
-#    volumes:
-#       - "${PWD}/cert.pem:/etc/nginx/ssl/fullchain.pem"
-#       - "${PWD}/key.pem:/etc/nginx/ssl/privkey.pem"
-#    environment:
-#      - QUICK=true
-#      - STAPLING=
-#      - SSL_SESSIONS=3600
-
-# https://stackoverflow.com/questions/47088261/restarting-an-unhealthy-docker-container-based-on-healthcheck
   tor_proxy:
     container_name: tor_proxy
     build: ./tor_proxy/
@@ -56,12 +73,17 @@ services:
       - "9050:9050"
       - "9051:9051"
 
-  certbot:
-    image: certbot/certbot
-    container_name: certbot
-    volumes:
-      - /srv/certbot-webroot:/var/www/certbot
-      - /srv/certbot-certs:/etc/letsencrypt
-    # Long-lived container: renews every 12h, certbot only acts if cert is near expiry
-    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done'
+  # Restarts any container reporting Docker health=unhealthy (label autoheal=true).
+  # restart:always only reacts to process EXIT; a hung/dead app stays "Up (unhealthy)"
+  # forever otherwise -- which is what caused the 2026-06 outage.
+  autoheal:
+    image: willfarrell/autoheal:latest
+    container_name: autoheal
     restart: always
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=autoheal
+      - AUTOHEAL_INTERVAL=30
+      - AUTOHEAL_START_PERIOD=120
+      - AUTOHEAL_DEFAULT_STOP_TIMEOUT=30
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

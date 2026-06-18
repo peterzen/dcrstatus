@@ -2,10 +2,7 @@
 
 This repository contains configuration to run an instance of [Uptime Kuma](https://github.com/louislam/uptime-kuma) monitoring the health of applications and services of the Decred network.
 
-Uptime Kuma runs at **v2** with a **MariaDB** backend (v1 used SQLite, whose `kuma.db`
-grew without bound — see `CLAUDE.md` for the history). TLS is terminated by **Caddy**,
-which obtains and renews Let's Encrypt certificates automatically (replacing the old
-nginx + certbot setup).
+Uptime Kuma runs at **v2** with a **MariaDB** backend.
 
 ### Prerequisites
 

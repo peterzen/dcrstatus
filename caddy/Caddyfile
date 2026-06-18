@@ -1,0 +1,11 @@
+# Caddy handles HTTPS automatically (ACME via Let's Encrypt), replacing the old
+# nginx + certbot pair. Certs/keys are persisted in the /data volume and renewed
+# automatically. SERVER_URL / CERTBOT_EMAIL are injected from the environment.
+{
+	email {$CERTBOT_EMAIL}
+}
+
+{$SERVER_URL} {
+	# WebSocket upgrades (socket.io) are proxied transparently by reverse_proxy.
+	reverse_proxy uptime-kuma:3001
+}

@@ -61,6 +61,9 @@ services:
     container_name: tor_proxy
     build: ./tor_proxy/
     restart: unless-stopped
+    # --quiet suppresses tor's startup console log (the config-validation [warn]
+    # lines); the torrc's "Log err" then keeps only real errors.
+    command: ["-f", "/etc/tor/torrc.default", "--quiet"]
     volumes:
       - /srv/tor_data:/var/lib/tor
     healthcheck:

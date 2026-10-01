@@ -32,3 +32,9 @@ docker compose up -d
      a database backup (or migrate an existing instance) to populate it. The legacy
      `uptime-kuma-configuration.json` JSON import is deprecated in v2 and does **not**
      restore status pages.
+
+### Provisioning a new host
+
+`deploy/vultr/` contains a cloud-init template and scripts to build a Vultr host (ZFS `/srv` on a
+block volume, Docker) and migrate an existing deployment onto it. See
+[deploy/vultr/README.md](deploy/vultr/README.md).

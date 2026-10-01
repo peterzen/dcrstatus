@@ -1,0 +1,108 @@
+#cloud-config
+# ${FQDN} — OS setup for the dcrstatus host (Debian 13): ZFS pool on a block volume, Docker CE.
+# Rendered by deploy.sh (envsubst: FQDN SHORT BLOCK_SERIAL SSH_AUTHORIZED_KEYS).
+# Contains NO secrets (Vultr metadata exposes user-data). App data/.env are copied afterwards
+# by migrate.sh. Never use write_files `defer: true` on Vultr Debian 13 (runs after runcmd).
+
+hostname: ${SHORT}
+fqdn: ${FQDN}
+manage_etc_hosts: true
+timezone: Etc/UTC
+disable_root: false
+ssh_pwauth: false
+
+users:
+  - name: root
+    lock_passwd: true
+    ssh_authorized_keys:
+${SSH_AUTHORIZED_KEYS}
+
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - git
+  - rsync
+  - cron
+  - htop
+  - vim
+  - nano
+  - less
+  - lsof
+  - mtr-tiny
+  - traceroute
+  - bind9-dnsutils
+  - netcat-traditional
+  - unattended-upgrades
+  - bash-completion
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/10-is2.conf
+    content: |
+      PermitRootLogin prohibit-password
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+  - path: /usr/local/sbin/is2-bootstrap.sh
+    permissions: "0755"
+    content: |
+      #!/bin/bash
+      # Idempotent (safe to re-run by hand: /usr/local/sbin/is2-bootstrap.sh).
+      # Docker CE from the official repo, ZFS pool "tank" on the attached block volume mounted at /srv.
+      set -euxo pipefail
+      export DEBIAN_FRONTEND=noninteractive
+      DISK=/dev/disk/by-id/virtio-${BLOCK_SERIAL}
+
+      if [ ! -f /etc/apt/sources.list.d/docker.list ]; then
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+        chmod a+r /etc/apt/keyrings/docker.asc
+        echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian trixie stable" \
+          > /etc/apt/sources.list.d/docker.list
+        apt-get update
+      fi
+
+      # ZFS (DKMS, contrib). Headers for the RUNNING kernel are needed so the module loads without a reboot.
+      apt-get install -y "linux-headers-$(uname -r)" linux-headers-amd64 zfs-dkms zfsutils-linux
+      modprobe zfs
+
+      # Block volume is attached by deploy.sh after the instance exists: wait for it (up to 20 min).
+      for i in $(seq 1 240); do [ -e "$DISK" ] && break; sleep 5; done
+      [ -e "$DISK" ] || { echo "block volume $DISK never appeared" >&2; exit 1; }
+
+      if ! zpool list tank >/dev/null 2>&1; then
+        if zpool import tank 2>/dev/null; then
+          :  # re-attached volume from an earlier build: keep its data
+        else
+          # refuse to clobber a disk that already carries a filesystem/partition table
+          [ -z "$(wipefs -n "$DISK" | tail -n +2)" ] || { echo "$DISK has existing signatures; refusing to create pool" >&2; exit 1; }
+          # same properties as the original production pool
+          zpool create -o ashift=12 -O compression=lz4 -O atime=off -O mountpoint=/srv tank "$DISK"
+        fi
+      fi
+      zpool set cachefile=/etc/zfs/zpool.cache tank
+      systemctl enable zfs-import-cache zfs-mount zfs.target zfs-import.target
+
+      # docker must start after /srv is mounted (bind mounts)
+      install -d /etc/systemd/system/docker.service.d
+      printf '[Unit]\nAfter=zfs-mount.service\nWants=zfs-mount.service\n' > /etc/systemd/system/docker.service.d/zfs.conf
+      systemctl daemon-reload
+
+      apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      systemctl enable --now docker
+
+      mountpoint -q /srv
+      mkdir -p /srv/mariadb /srv/tor_data /srv/caddy-data /srv/caddy-config /srv/uptime-kuma
+
+      systemctl reload ssh || true
+      touch /var/lib/is2-bootstrap.done
+
+runcmd:
+  - [ /usr/local/sbin/is2-bootstrap.sh ]

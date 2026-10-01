@@ -1,8 +1,8 @@
 #cloud-config
 # ${FQDN} — OS setup for the dcrstatus host (Debian 13): ZFS pool on a block volume, Docker CE.
 # Rendered by deploy.sh (envsubst: FQDN SHORT BLOCK_SERIAL SSH_AUTHORIZED_KEYS).
-# Contains NO secrets (Vultr metadata exposes user-data). App data/.env are copied afterwards
-# by migrate.sh. Never use write_files `defer: true` on Vultr Debian 13 (runs after runcmd).
+# Contains NO secrets (Vultr metadata exposes user-data); app data and .env are put in place
+# afterwards. Never use write_files `defer: true` on Vultr Debian 13 (runs after runcmd).
 
 hostname: ${SHORT}
 fqdn: ${FQDN}

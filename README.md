@@ -36,5 +36,5 @@ docker compose up -d
 ### Provisioning a new host
 
 `deploy/vultr/` contains a cloud-init template and scripts to build a Vultr host (ZFS `/srv` on a
-block volume, Docker) and migrate an existing deployment onto it. See
+block volume, Docker). See
 [deploy/vultr/README.md](deploy/vultr/README.md).

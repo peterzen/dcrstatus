@@ -1,0 +1,39 @@
+services:
+  uptime-kuma:
+    hostname: uptime-kuma
+    image: dcrstatus-uptime-kuma:2.4.0
+    container_name: uptime-kuma
+    volumes:
+      - /srv/uptime-kuma:/app/data
+    restart: always
+    labels:
+      - autoheal=true
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - SERVER_URL=${SERVER_URL}
+      - CERTBOT_EMAIL=${CERTBOT_EMAIL}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /srv/caddy-data:/data
+      - /srv/caddy-config:/config
+    restart: always
+    depends_on:
+      - uptime-kuma
+
+  autoheal:
+    image: willfarrell/autoheal:latest
+    container_name: autoheal
+    restart: always
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=autoheal
+      - AUTOHEAL_INTERVAL=30
+      - AUTOHEAL_START_PERIOD=120
+      - AUTOHEAL_DEFAULT_STOP_TIMEOUT=30
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
